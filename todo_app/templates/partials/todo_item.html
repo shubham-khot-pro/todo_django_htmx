@@ -1,0 +1,36 @@
+<li id="todo-{{ todo.id }}">
+ 
+  <form hx-post="{% url 'todo_app:toggle' todo.id %}"
+      hx-trigger="change"
+      hx-target="#todo-{{ todo.id }}"
+      hx-swap="outerHTML"
+      style="display:inline">
+  {% csrf_token %}
+  <input type="checkbox"
+         name="completed"
+         {% if todo.completed %}checked{% endif %}>
+</form>
+
+
+  <strong>{{ todo.title }}</strong>
+
+  {% if todo.description %}
+    <small>{{ todo.description }}</small>
+  {% endif %}
+
+  <button hx-get="{% url 'todo_app:edit' todo.id %}"
+          hx-target="#todo-{{ todo.id }}"
+          hx-swap="outerHTML">
+    Edit
+  </button>
+
+  <button class="btn btn-sm btn-success" hx-get="{% url 'todo_app:history' todo.id %}" hx-target="#modal-body" hx-swap="innerHTML" hx-on="htmx:afterSwap: bootstrap.Modal.getOrCreateInstance(document.getElementById('historyModal')).show()">Event history</button>
+
+  <form hx-post="{% url 'todo_app:delete' todo.id %}"
+        hx-target="#todo-list"
+        hx-swap="innerHTML"
+        style="display:inline">
+    {% csrf_token %}
+    <button type="submit">Delete</button>
+  </form>
+</li>

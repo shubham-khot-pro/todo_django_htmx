@@ -1,0 +1,15 @@
+
+<li id="todo-{{ todo.id }}" class="list-group-item">
+  <form method="post"  hx-post="{% url 'todo_app:edit' todo.id %}" hx-target="#todo-{{ todo.id }}" hx-swap="outerHTML" class="d-flex align-items-start w-100 gap-3">
+    {% csrf_token %}
+    <div class="flex-grow-1">
+      <input name="title" value="{{ todo.title }}" required class="form-control mb-2">
+      <input name="description" value="{{ todo.description }}" class="form-control">
+    </div>
+    <div class="d-flex gap-2 align-self-center">
+      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      <button type="button" class="btn btn-sm btn-secondary" hx-get="{% url 'todo_app:index' %}" hx-target="#container" hx-swap="outerHTML">Cancel</button>
+    </div>
+  </form>
+</li>
+

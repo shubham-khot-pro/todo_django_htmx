@@ -1,0 +1,28 @@
+<div id="history-{{ todo.id }}">
+  <h5>{{ todo.title }} — History</h5>
+  <ul class="list-group mt-3">
+    {% for ev in events %}
+      <li class="list-group-item"> <strong>{{ ev.event_type|capfirst }}  </strong> — <span class="muted">{{ ev.timestamp }}</span>
+        {% if ev.details %}
+          <div class="mt-1"><small>{{ ev.details }}</small></div>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="list-group-item muted">No history available.</li>
+    {% endfor %}
+  </ul>
+</div>
+<script>
+  // show the Bootstrap modal after HTMX swaps the history content
+  (function(){
+    try {
+      var modalEl = document.getElementById('historyModal');
+      if (modalEl) {
+        var m = bootstrap.Modal.getOrCreateInstance(modalEl);
+        m.show();
+      }
+    } catch (e) {
+      console.error('Could not show modal', e);
+    }
+  })();
+</script>

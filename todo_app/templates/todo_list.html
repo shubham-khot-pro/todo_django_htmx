@@ -1,0 +1,28 @@
+{% extends 'index.html' %}
+
+{% block content %}
+
+<div id="main-todo-list">
+<div class="card mb-4">
+	<div class="card-body">
+		<form id="create-form" method="post" action="{% url 'todo_app:create' %}" class="row g-2 align-items-center" hx-post="{% url 'todo_app:create' %}" hx-target="#todo-list" hx-swap="innerHTML">
+			{% csrf_token %}
+			<div class="col-auto">
+				<input class="form-control" name="title" placeholder="New todo title" required>
+			</div>
+			<div class="col">
+				<input class="form-control" name="description" placeholder="optional description">
+			</div>
+			<div class="col-auto">
+				<button class="btn btn-primary" type="submit">Add</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div id="todo-list">
+	{% include 'partials/todo_list.html' %}
+</div>
+
+</div>
+{% endblock %}
