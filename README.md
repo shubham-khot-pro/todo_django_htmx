@@ -12,6 +12,12 @@ A minimal, reactive Todo application using **Django** for the backend, **Postgre
 
 ---
 
+
+## Todo App Schema
+![Todo App Schema](todo_schema.png)
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Clone & Setup Environment
