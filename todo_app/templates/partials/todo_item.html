@@ -1,36 +1,64 @@
-<li id="todo-{{ todo.id }}">
- 
-  <form hx-post="{% url 'todo_app:toggle' todo.id %}"
-      hx-trigger="change"
-      hx-target="#todo-{{ todo.id }}"
-      hx-swap="outerHTML"
-      style="display:inline">
-  {% csrf_token %}
-  <input type="checkbox"
-         name="completed"
-         {% if todo.completed %}checked{% endif %}>
-</form>
-
-
-  <strong>{{ todo.title }}</strong>
-
-  {% if todo.description %}
-    <small>{{ todo.description }}</small>
-  {% endif %}
-
-  <button hx-get="{% url 'todo_app:edit' todo.id %}"
-          hx-target="#todo-{{ todo.id }}"
-          hx-swap="outerHTML">
-    Edit
-  </button>
-
-  <button class="btn btn-sm btn-success" hx-get="{% url 'todo_app:history' todo.id %}" hx-target="#modal-body" hx-swap="innerHTML" hx-on="htmx:afterSwap: bootstrap.Modal.getOrCreateInstance(document.getElementById('historyModal')).show()">Event history</button>
-
-  <form hx-post="{% url 'todo_app:delete' todo.id %}"
-        hx-target="#todo-list"
-        hx-swap="innerHTML"
-        style="display:inline">
-    {% csrf_token %}
-    <button type="submit">Delete</button>
-  </form>
-</li>
+<!-- templates/partials/todo_item.html -->
+<div id="todo-{{ todo.id }}" class="todo-card card fade-in {% if todo.completed %}completed{% endif %}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="form-check d-inline-block me-3">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           {% if todo.completed %}checked{% endif %}
+                           hx-post="{% url 'todo_app:toggle' todo.id %}"
+                           hx-trigger="change"
+                           hx-target="#todo-{{ todo.id }}"
+                           hx-swap="outerHTML"
+                           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                </div>
+                
+                <h6 class="card-title d-inline {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                    {{ todo.title }}
+                </h6>
+                
+                {% if todo.description %}
+                <p class="card-text text-muted mt-2 mb-0">{{ todo.description }}</p>
+                {% endif %}
+                
+                <div class="mt-2 small text-muted">
+                    Created: {{ todo.created_at|date:"M d, Y H:i" }}
+                    {% if todo.updated_at != todo.created_at %}
+                    • Updated: {{ todo.updated_at|date:"M d, Y H:i" }}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="btn-group btn-group-sm">
+                <!-- History Button -->
+                <button class="btn btn-outline-info btn-sm"
+                        hx-get="{% url 'todo_app:history' todo.id %}"
+                        hx-target="#modal-body"
+                        hx-swap="innerHTML"
+                        data-bs-toggle="modal"
+                        data-bs-target="#historyModal">
+                    <i class="bi bi-clock-history"></i> History
+                </button>
+                
+                <!-- Edit Button -->
+                <button class="btn btn-outline-primary btn-sm"
+                        hx-get="{% url 'todo_app:edit' todo.id %}"
+                        hx-target="#todo-{{ todo.id }}"
+                        hx-swap="outerHTML">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                
+                <!-- Delete Button -->
+                <button class="btn btn-outline-danger btn-sm"
+                        hx-post="{% url 'todo_app:soft_delete' todo.id %}"
+                        hx-target="#todo-{{ todo.id }}"
+                        hx-swap="outerHTML"
+                        hx-confirm="Move this todo to trash?"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

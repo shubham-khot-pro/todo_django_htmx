@@ -1,28 +1,75 @@
+<!-- templates/todo_list.html -->
 {% extends 'index.html' %}
 
 {% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Create Todo Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Add New Todo</h5>
+                <form id="create-todo-form" 
+                      hx-post="{% url 'todo_app:create' %}" 
+                      hx-target="#todo-items" 
+                      hx-swap="afterbegin"
+                      hx-on::after-request="this.reset(); updateTodoCount();"
+                      class="row g-2">
+                    {% csrf_token %}
+                    <div class="col-md-6">
+                        <input type="text" 
+                               name="title" 
+                               class="form-control" 
+                               placeholder="Todo title" 
+                               required>
+                        <div id="title-error" class="text-danger small mt-1"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" 
+                               name="description" 
+                               class="form-control" 
+                               placeholder="Optional description">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span>Add</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-<div id="main-todo-list">
-<div class="card mb-4">
-	<div class="card-body">
-		<form id="create-form" method="post" action="{% url 'todo_app:create' %}" class="row g-2 align-items-center" hx-post="{% url 'todo_app:create' %}" hx-target="#todo-list" hx-swap="innerHTML">
-			{% csrf_token %}
-			<div class="col-auto">
-				<input class="form-control" name="title" placeholder="New todo title" required>
-			</div>
-			<div class="col">
-				<input class="form-control" name="description" placeholder="optional description">
-			</div>
-			<div class="col-auto">
-				<button class="btn btn-primary" type="submit">Add</button>
-			</div>
-		</form>
-	</div>
-</div>
-
-<div id="todo-list">
-	{% include 'partials/todo_list.html' %}
-</div>
-
+        <!-- Todo List -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title d-flex justify-content-between align-items-center">
+                    Active Todos
+                    <span id="todo-count" class="badge bg-primary">{{ todos.paginator.count|default:todos.count }}</span>
+                </h5>
+                
+                <div id="todo-items">
+                    {% for todo in todos %}
+                        {% include 'partials/todo_item.html' with todo=todo %}
+                    {% empty %}
+                        <div class="text-center py-5 text-muted">
+                            <p>No todos yet. Create your first one above!</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- SIMPLE LOAD MORE BUTTON -->
+                {% if has_next %}
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-primary btn-sm"
+                            hx-get="{% url 'todo_app:load_more_todos' %}?page={{ next_page }}"
+                            hx-target="#todo-items"
+                            hx-swap="beforeend"
+                            hx-on:click="this.remove()">
+                        Load More Todos
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

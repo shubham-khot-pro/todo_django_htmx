@@ -1,0 +1,39 @@
+<!-- templates/partials/history_items.html -->
+{% for event in events %}
+    <div class="timeline-item mb-3">
+        <div class="d-flex">
+            <div class="timeline-badge 
+                {% if event.event_type == 'created' %}bg-success
+                {% elif event.event_type == 'updated' %}bg-primary
+                {% elif event.event_type == 'checked' %}bg-info
+                {% elif event.event_type == 'deleted' %}bg-danger
+                {% elif event.event_type == 'restored' %}bg-warning
+                {% else %}bg-secondary{% endif %} 
+                rounded-circle me-3"
+                style="width: 30px; height: 30px;"></div>
+            <div class="flex-grow-1">
+                <strong>{{ event.get_event_type_display }}</strong>
+                <div class="text-muted small">{{ event.timestamp|date:"M d, Y H:i:s" }}</div>
+                
+                {% if event.details %}
+                <div class="mt-2 p-2 bg-light rounded">
+                    <small><pre class="mb-0">{{ event.details|pprint }}</pre></small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<!-- SIMPLE LOAD MORE BUTTON -->
+{% if has_next %}
+<div class="text-center mt-3">
+    <button class="btn btn-outline-primary btn-sm"
+            hx-get="{% url 'todo_app:load_more_history' todo.id %}?page={{ next_page }}"
+            hx-target="#history-items"
+            hx-swap="beforeend"
+            hx-on:click="this.remove()">
+        Load More History
+    </button>
+</div>
+{% endif %}

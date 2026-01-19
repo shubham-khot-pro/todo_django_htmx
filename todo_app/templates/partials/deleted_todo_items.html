@@ -1,0 +1,17 @@
+<!-- templates/partials/deleted_todo_items.html -->
+{% for todo in todos %}
+    {% include 'partials/deleted_todo_item.html' with todo=todo %}
+{% endfor %}
+
+<!-- SIMPLE LOAD MORE BUTTON -->
+{% if has_next %}
+<div class="text-center mt-3">
+    <button class="btn btn-outline-primary btn-sm"
+            hx-get="{% url 'todo_app:load_more_deleted' %}?page={{ next_page }}"
+            hx-target="#deleted-todo-items"
+            hx-swap="beforeend"
+            hx-on:click="this.remove()">
+        Load More Deleted Todos
+    </button>
+</div>
+{% endif %}

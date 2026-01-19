@@ -1,0 +1,48 @@
+<!-- templates/deleted_todos.html -->
+{% extends 'index.html' %}
+
+{% block title %}Recently Deleted - Todo App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title d-flex justify-content-between align-items-center">
+                    Recently Deleted
+                    <a href="{% url 'todo_app:index' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Todos
+                    </a>
+                </h5>
+                
+                <p class="text-muted">
+                    Todos in trash will be automatically deleted after 30 days.
+                </p>
+                
+                <div id="deleted-todo-items">
+                    {% for todo in todos %}
+                        {% include 'partials/deleted_todo_item.html' with todo=todo %}
+                    {% empty %}
+                        <div class="text-center py-5 text-muted">
+                            <p>No deleted todos found.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- SIMPLE LOAD MORE BUTTON -->
+                {% if has_next %}
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-primary btn-sm"
+                            hx-get="{% url 'todo_app:load_more_deleted' %}?page={{ next_page }}"
+                            hx-target="#deleted-todo-items"
+                            hx-swap="beforeend"
+                            hx-on:click="this.remove()">
+                        Load More Deleted Todos
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!-- templates/partials/deleted_todo_item.html -->
+<div id="deleted-todo-{{ todo.id }}" class="todo-card deleted card fade-in">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <h6 class="card-title">{{ todo.title }}</h6>
+                
+                {% if todo.description %}
+                <p class="card-text text-muted mt-2 mb-0">{{ todo.description }}</p>
+                {% endif %}
+                
+                <div class="mt-2 small text-muted">
+                    Deleted: {{ todo.deleted_at|date:"M d, Y H:i" }}
+                    • Originally created: {{ todo.created_at|date:"M d, Y" }}
+                </div>
+            </div>
+            
+            <div class="btn-group btn-group-sm">
+                <!-- Restore Button -->
+                <button class="btn btn-outline-success btn-sm"
+                        hx-post="{% url 'todo_app:restore' todo.id %}"
+                        hx-target="#deleted-todo-{{ todo.id }}"
+                        hx-swap="delete"
+                        hx-confirm="Restore this todo?"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                    <i class="bi bi-arrow-clockwise"></i> Restore
+                </button>
+                
+                <!-- Permanent Delete Button - FIXED CSRF -->
+                <button class="btn btn-outline-danger btn-sm"
+                        hx-post="{% url 'todo_app:hard_delete' todo.id %}"
+                        hx-target="#deleted-todo-{{ todo.id }}"
+                        hx-swap="delete"
+                        hx-confirm="Permanently delete this todo? This action cannot be undone."
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                    <i class="bi bi-trash2"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

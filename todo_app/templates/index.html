@@ -1,40 +1,142 @@
-<!doctype html>
+<!-- templates/index.html -->
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width,initial-scale=1">
-		<title>Simple TODO</title>
-		<script src="https://unpkg.com/htmx.org@1.9.3"></script>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-		<style>
-			body{font-family: Arial, sans-serif; max-width:900px;margin:24px auto;padding:0 12px}
-			.muted{color:#666;font-size:0.9rem}
-			.todo-title{font-weight:600}
-		</style>
-	</head>
-	<body>
-		<div id="container">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Todo App{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .todo-card {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .todo-card.completed {
+            border-left-color: #198754;
+            opacity: 0.8;
+        }
+        .todo-card.deleted {
+            border-left-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0d6efd;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 rounded shadow-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{% url 'todo_app:home' %}">📝 Todo App</a>
+                <div class="navbar-nav">
+                    <a class="nav-link" href="{% url 'todo_app:index' %}">Active Todos</a>
+                    <a class="nav-link" href="{% url 'todo_app:deleted_todos' %}">
+                        Recently Deleted 
+                        {% if request.todo_manager.deleted.count > 0 %}
+                            <span class="badge bg-danger">{{ request.todo_manager.deleted.count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </nav>
 
-		<div class="container">
-			<h1 class="mb-4">Simple TODO</h1>
-			{% block content %}{% endblock %}
-		</div>
+        {% block content %}{% endblock %}
 
-		<!-- History Modal -->
-		<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">Todo History</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body" id="modal-body">
-						<!-- history will be loaded here via HTMX -->
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-	</body>
+        <!-- History Modal -->
+        <div class="modal fade" id="historyModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Todo History</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="modal-body">
+                        <!-- History content loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // HTMX configuration
+        htmx.config.useTemplateFragments = true;
+        
+        // Simple function to update todo count
+        function updateTodoCount() {
+            const todoItems = document.querySelectorAll('#todo-items .todo-card:not(.deleted)');
+            const countElement = document.getElementById('todo-count');
+            if (countElement) {
+                countElement.textContent = todoItems.length;
+            }
+        }
+        
+        // Update todo count when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTodoCount();
+            
+            // Listen for HTMX swaps to update count
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                setTimeout(updateTodoCount, 50);
+            });
+            
+            // Listen for HTMX requests to show toasts
+            document.body.addEventListener('htmx:beforeSwap', function(evt) {
+                if (evt.detail.xhr.status === 400) {
+                    // Show error toast
+                    showToast('Error: ' + (evt.detail.xhr.responseText || 'Something went wrong'), 'danger');
+                    evt.detail.shouldSwap = false;
+                }
+            });
+        });
+        
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
 </html>
