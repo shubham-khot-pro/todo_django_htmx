@@ -1,7 +1,8 @@
-<!-- templates/todo_list.html -->
+<!-- templates/todo_list.html - Add this at the top -->
 {% extends 'index.html' %}
 
 {% block content %}
+{% if user.is_authenticated %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
         <!-- Create Todo Form -->
@@ -72,4 +73,5 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}

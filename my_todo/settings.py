@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'todo_app',
     'django_htmx',
+
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -57,7 +59,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'todo_app.context_processors.todo_manager',  # Add this line
+                'todo_app.context_processors.todo_manager',  
+
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -106,3 +111,19 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#---------Social Authentication backends -----------------------
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',  # Google OAuth2
+    'django.contrib.auth.backends.ModelBackend', # Django classic auth
+)
+
+# Social auth settings
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+LOGIN_URL = '/oauth/login/google-oauth2/'  # Redirect to Google login
+LOGIN_REDIRECT_URL = '/todos'  # After login, go to home
+LOGOUT_REDIRECT_URL = '/'  # After logout, go to home
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')

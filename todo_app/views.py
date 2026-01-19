@@ -1,8 +1,4 @@
-# views.py - COMPLETELY REPLACE WITH THIS
-"""
-Class-based views for Todo application with pagination and delete functionality.
-"""
-
+# views.py - Update with these changes
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import View, TemplateView
@@ -10,12 +6,19 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LogoutView as AuthLogoutView
 from .models import Todo, TodoEvent
 
+# Add login requirement to all views
+class LoginRequiredMixinCustom(LoginRequiredMixin):
+    """Custom login required mixin that redirects to Google login"""
+    login_url = '/oauth/login/google-oauth2/'
 
-class TodoListView(TemplateView):
+class TodoListView(LoginRequiredMixinCustom, TemplateView):
     """
-    Display paginated list of active todo items with infinite scroll.
+    Display paginated list of active todo items.
     """
     template_name = 'todo_list.html'
     
@@ -24,7 +27,8 @@ class TodoListView(TemplateView):
         page = int(self.request.GET.get('page', 1))
         per_page = 5
         
-        todos = Todo.objects.active().order_by('-created_at')
+        # Only get todos for the current logged-in user
+        todos = Todo.objects.active().filter(user=self.request.user).order_by('-created_at')
         paginator = Paginator(todos, per_page)
         
         try:
@@ -41,7 +45,7 @@ class TodoListView(TemplateView):
         return context
 
 
-class CreateTodoView(View):
+class CreateTodoView(LoginRequiredMixinCustom, View):
     """
     Handle creation of new todo items.
     """
@@ -51,17 +55,30 @@ class CreateTodoView(View):
         return super().dispatch(*args, **kwargs)
     
     def post(self, request):
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Please login first'}, status=403)
+        
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
         
         if not title:
             return JsonResponse({'error': 'Title is required'}, status=400)
         
-        if Todo.objects.active().filter(title__iexact=title).exists():
+        # Check for duplicate title for this user only
+        if Todo.objects.active().filter(user=request.user, title__iexact=title).exists():
             return JsonResponse({'error': 'A todo with this title already exists'}, status=400)
         
-        todo = Todo.objects.create(title=title, description=description)
+        # Create todo with the current user
+        todo = Todo.objects.create(
+            title=title, 
+            description=description,
+            user=request.user  # Assign the current user
+        )
+        
+        # Create event with the current user
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=TodoEvent.TODO_CREATED,
             details={'title': title}
@@ -73,7 +90,7 @@ class CreateTodoView(View):
         return redirect('todo_app:index')
 
 
-class ToggleTodoView(View):
+class ToggleTodoView(LoginRequiredMixinCustom, View):
     """
     Toggle completion status of a todo item.
     """
@@ -83,7 +100,8 @@ class ToggleTodoView(View):
         return super().dispatch(*args, **kwargs)
     
     def post(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow toggling todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         todo.completed = not todo.completed
         todo.save()
         
@@ -92,7 +110,9 @@ class ToggleTodoView(View):
             if todo.completed
             else TodoEvent.TODO_UNCHECKED
         )
+        
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=event_type,
             details={'completed': todo.completed, 'title': todo.title}
@@ -101,24 +121,27 @@ class ToggleTodoView(View):
         return render(request, 'partials/todo_item.html', {'todo': todo})
 
 
-class EditTodoView(View):
+class EditTodoView(LoginRequiredMixinCustom, View):
     """
     Handle editing of todo items.
     """
     
     def get(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow editing todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         return render(request, 'partials/todo_edit_form.html', {'todo': todo})
     
     def post(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow editing todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         title = request.POST.get('title', '').strip()
         description = request.POST.get('description', '').strip()
         
         if not title:
             return JsonResponse({'error': 'Title required'}, status=400)
         
-        if Todo.objects.active().exclude(pk=todo.pk).filter(title__iexact=title).exists():
+        # Check for duplicate title for this user only (excluding current todo)
+        if Todo.objects.active().filter(user=request.user).exclude(pk=todo.pk).filter(title__iexact=title).exists():
             return JsonResponse({'error': 'A todo with this title already exists'}, status=400)
         
         if todo.title.lower() == title.lower() and todo.description == description:
@@ -130,6 +153,7 @@ class EditTodoView(View):
         todo.save()
         
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=TodoEvent.TODO_UPDATED,
             details={
@@ -141,17 +165,19 @@ class EditTodoView(View):
         return render(request, 'partials/todo_item.html', {'todo': todo})
 
 
-class SoftDeleteTodoView(View):
+class SoftDeleteTodoView(LoginRequiredMixinCustom, View):
     """
     Soft delete a todo item.
     """
     
     def post(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow deleting todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         
         todo.soft_delete()
         
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=TodoEvent.TODO_DELETED,
             details={'title': todo.title}
@@ -163,7 +189,7 @@ class SoftDeleteTodoView(View):
         return redirect('todo_app:index')
 
 
-class DeletedTodosView(TemplateView):
+class DeletedTodosView(LoginRequiredMixinCustom, TemplateView):
     """
     Display list of soft-deleted todo items with pagination.
     """
@@ -174,7 +200,8 @@ class DeletedTodosView(TemplateView):
         page = int(self.request.GET.get('page', 1))
         per_page = 5
         
-        todos = Todo.objects.deleted().order_by('-deleted_at')
+        # Only get deleted todos for the current user
+        todos = Todo.objects.deleted().filter(user=self.request.user).order_by('-deleted_at')
         paginator = Paginator(todos, per_page)
         
         try:
@@ -191,17 +218,19 @@ class DeletedTodosView(TemplateView):
         return context
 
 
-class RestoreTodoView(View):
+class RestoreTodoView(LoginRequiredMixinCustom, View):
     """
     Restore a soft-deleted todo item.
     """
     
     def post(self, request, pk):
-        todo = get_object_or_404(Todo.objects.deleted(), pk=pk)
+        # Only allow restoring todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.deleted().filter(user=request.user), pk=pk)
         
         todo.restore()
         
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=TodoEvent.TODO_RESTORED,
             details={'title': todo.title}
@@ -213,16 +242,18 @@ class RestoreTodoView(View):
         return redirect('todo_app:deleted_todos')
 
 
-class HardDeleteTodoView(View):
+class HardDeleteTodoView(LoginRequiredMixinCustom, View):
     """
     Permanently delete a todo item and all associated events.
     """
     
     def post(self, request, pk):
-        todo = get_object_or_404(Todo.objects.deleted(), pk=pk)
+        # Only allow hard deleting todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.deleted().filter(user=request.user), pk=pk)
         
         # Log event before deletion
         TodoEvent.objects.create(
+            user=request.user,  # Assign the current user
             todo=todo,
             event_type=TodoEvent.TODO_PERMANENTLY_DELETED,
             details={'title': todo.title}
@@ -235,13 +266,14 @@ class HardDeleteTodoView(View):
         return redirect('todo_app:deleted_todos')
 
 
-class TodoHistoryView(View):
+class TodoHistoryView(LoginRequiredMixinCustom, View):
     """
     Display paginated history of events for a todo item.
     """
     
     def get(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow viewing history for todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         page = int(request.GET.get('page', 1))
         per_page = 3
         
@@ -260,8 +292,8 @@ class TodoHistoryView(View):
             'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
         })
 
-# In views.py, update LoadMoreTodosView:
-class LoadMoreTodosView(View):
+
+class LoadMoreTodosView(LoginRequiredMixinCustom, View):
     """
     Load more todos with simple button.
     """
@@ -270,7 +302,8 @@ class LoadMoreTodosView(View):
         page = int(request.GET.get('page', 2))
         per_page = 5
         
-        todos = Todo.objects.active().order_by('-created_at')
+        # Only get todos for the current user
+        todos = Todo.objects.active().filter(user=request.user).order_by('-created_at')
         paginator = Paginator(todos, per_page)
         
         try:
@@ -285,7 +318,8 @@ class LoadMoreTodosView(View):
         }
         return render(request, 'partials/load_more_todos.html', context)
 
-class LoadMoreDeletedTodosView(View):
+
+class LoadMoreDeletedTodosView(LoginRequiredMixinCustom, View):
     """
     Load more deleted todos with simple button.
     """
@@ -294,7 +328,8 @@ class LoadMoreDeletedTodosView(View):
         page = int(request.GET.get('page', 2))
         per_page = 5
         
-        todos = Todo.objects.deleted().order_by('-deleted_at')
+        # Only get deleted todos for the current user
+        todos = Todo.objects.deleted().filter(user=request.user).order_by('-deleted_at')
         paginator = Paginator(todos, per_page)
         
         try:
@@ -309,13 +344,15 @@ class LoadMoreDeletedTodosView(View):
         }
         return render(request, 'partials/deleted_todo_items.html', context)
 
-class LoadMoreHistoryView(View):
+
+class LoadMoreHistoryView(LoginRequiredMixinCustom, View):
     """
     Load more history events with simple button.
     """
     
     def get(self, request, pk):
-        todo = get_object_or_404(Todo.objects.active(), pk=pk)
+        # Only allow loading more history for todos that belong to the current user
+        todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         page = int(request.GET.get('page', 2))
         per_page = 3
         
@@ -334,8 +371,11 @@ class LoadMoreHistoryView(View):
             'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
         }
         return render(request, 'partials/history_items.html', context)
-    
 
+
+class LogoutView(LoginRequiredMixinCustom, AuthLogoutView):
+    """Custom logout view"""
+    next_page = '/'
 
 # from django.http import HttpResponseBadRequest, JsonResponse
 # from django.shortcuts import get_object_or_404, render

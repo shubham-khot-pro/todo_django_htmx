@@ -6,6 +6,7 @@ Models for Todo application with abstract base models and soft delete functional
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User  # ADD THIS IMPORT
 from .managers import TodoManager
 
 
@@ -47,6 +48,8 @@ class Todo(TimeStampedModel, SoftDeleteModel):
     """
     Todo item model with soft delete functionality.
     """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='todos', null=True, blank=True)  # Add null/blank for migration
+    
     title = models.CharField(max_length=200, verbose_name=_("Title"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     completed = models.BooleanField(default=False, verbose_name=_("Completed"))
@@ -61,8 +64,6 @@ class Todo(TimeStampedModel, SoftDeleteModel):
         ordering = ['-created_at']
         verbose_name = _("Todo")
         verbose_name_plural = _("Todos")
-        # Example of managed=False (for reference - not enabled here)
-        # managed = False  # Django won't create or delete table for this model
 
 
 class TodoEvent(TimeStampedModel):
@@ -86,6 +87,8 @@ class TodoEvent(TimeStampedModel):
         (TODO_RESTORED, 'Restored'),
         (TODO_PERMANENTLY_DELETED, 'Permanently Deleted'),
     ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='todo_events', null=True, blank=True)  # Changed to todo_events
     
     todo = models.ForeignKey(Todo, on_delete=models.CASCADE, related_name='events')
     event_type = models.CharField(max_length=32, choices=EVENT_CHOICES, verbose_name=_("Event Type"))
@@ -99,8 +102,7 @@ class TodoEvent(TimeStampedModel):
         ordering = ['-timestamp']
         verbose_name = _("Todo Event")
         verbose_name_plural = _("Todo Events")
-        # Example of managed=False (for reference)
-        # managed = False  # Useful when table already exists in DB
+
 
 # from django.db import models
 # from django.utils import timezone
