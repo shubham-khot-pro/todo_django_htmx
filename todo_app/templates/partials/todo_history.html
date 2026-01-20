@@ -30,18 +30,18 @@
         {% empty %}
             <p class="text-muted">No history available for this todo.</p>
         {% endfor %}
+        
+        <!-- INFINITE SCROLL TRIGGER FOR HISTORY -->
+        {% if has_next %}
+        <div class="text-center mt-3">
+            <div class="infinite-scroll-trigger" 
+                 hx-get="{% url 'todo_app:load_more_history' todo.id %}?page={{ next_page }}"
+                 hx-trigger="intersect once"
+                 hx-target="#history-items"
+                 hx-swap="beforeend">
+                
+            </div>
+        </div>
+        {% endif %}
     </div>
-    
-    <!-- SIMPLE LOAD MORE BUTTON -->
-    {% if has_next %}
-    <div class="text-center mt-3">
-        <button class="btn btn-outline-primary btn-sm"
-                hx-get="{% url 'todo_app:load_more_history' todo.id %}?page={{ next_page }}"
-                hx-target="#history-items"
-                hx-swap="beforeend"
-                hx-on:click="this.remove()">
-            Load More History
-        </button>
-    </div>
-    {% endif %}
 </div>

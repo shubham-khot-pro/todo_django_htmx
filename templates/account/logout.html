@@ -1,0 +1,39 @@
+{% extends 'index.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card mt-5">
+            <div class="card-body text-center py-5">
+                <h3 class="card-title mb-4">{% trans "Sign Out" %}</h3>
+                
+                <div class="mb-4">
+                    <i class="bi bi-question-circle" style="font-size: 4rem;"></i>
+                </div>
+                
+                <p class="lead mb-4">{% trans 'Are you sure you want to sign out?' %}</p>
+                
+                <form method="post" action="{% url 'account_logout' %}">
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-3 col-md-8 mx-auto">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> {% trans 'Sign Out' %}
+                        </button>
+                        
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> {% trans 'Cancel' %}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

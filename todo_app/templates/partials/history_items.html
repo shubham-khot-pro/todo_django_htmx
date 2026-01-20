@@ -25,15 +25,15 @@
     </div>
 {% endfor %}
 
-<!-- SIMPLE LOAD MORE BUTTON -->
+<!-- INFINITE SCROLL TRIGGER -->
 {% if has_next %}
 <div class="text-center mt-3">
-    <button class="btn btn-outline-primary btn-sm"
-            hx-get="{% url 'todo_app:load_more_history' todo.id %}?page={{ next_page }}"
-            hx-target="#history-items"
-            hx-swap="beforeend"
-            hx-on:click="this.remove()">
-        Load More History
-    </button>
+    <div class="infinite-scroll-trigger" 
+         hx-get="{% url 'todo_app:load_more_history' todo.id %}?page={{ next_page }}"
+         hx-trigger="intersect once"
+         hx-target="#history-items"
+         hx-swap="beforeend">
+        
+    </div>
 </div>
 {% endif %}

@@ -1,8 +1,9 @@
-<!-- templates/todo_list.html - Add this at the top -->
 {% extends 'index.html' %}
+{% load static %}
+
+{% block title %}My Todos - Todo App{% endblock %}
 
 {% block content %}
-{% if user.is_authenticated %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
         <!-- Create Todo Form -->
@@ -44,7 +45,6 @@
             <div class="card-body">
                 <h5 class="card-title d-flex justify-content-between align-items-center">
                     Active Todos
-                    <span id="todo-count" class="badge bg-primary">{{ todos.paginator.count|default:todos.count }}</span>
                 </h5>
                 
                 <div id="todo-items">
@@ -55,23 +55,22 @@
                             <p>No todos yet. Create your first one above!</p>
                         </div>
                     {% endfor %}
+                    
+                    <!-- INFINITE SCROLL TRIGGER -->
+                    {% if has_next %}
+                    <div class="text-center mt-3">
+                        <div class="infinite-scroll-trigger" 
+                             hx-get="{% url 'todo_app:load_more_todos' %}?page={{ next_page }}"
+                             hx-trigger="intersect once"
+                             hx-target="#todo-items"
+                             hx-swap="beforeend">
+                            
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                
-                <!-- SIMPLE LOAD MORE BUTTON -->
-                {% if has_next %}
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-primary btn-sm"
-                            hx-get="{% url 'todo_app:load_more_todos' %}?page={{ next_page }}"
-                            hx-target="#todo-items"
-                            hx-swap="beforeend"
-                            hx-on:click="this.remove()">
-                        Load More Todos
-                    </button>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 {% endblock %}

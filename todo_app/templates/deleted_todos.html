@@ -1,4 +1,3 @@
-<!-- templates/deleted_todos.html -->
 {% extends 'index.html' %}
 
 {% block title %}Recently Deleted - Todo App{% endblock %}
@@ -27,20 +26,22 @@
                             <p>No deleted todos found.</p>
                         </div>
                     {% endfor %}
+                    
+                    <!-- INFINITE SCROLL TRIGGER -->
+                    {% if has_next %}
+                    <div class="text-center mt-3">
+                        <div class="infinite-scroll-trigger" 
+                             hx-get="{% url 'todo_app:load_more_deleted' %}?page={{ next_page }}"
+                             hx-trigger="intersect once"
+                             hx-target="#deleted-todo-items"
+                             hx-swap="beforeend">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                
-                <!-- SIMPLE LOAD MORE BUTTON -->
-                {% if has_next %}
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-primary btn-sm"
-                            hx-get="{% url 'todo_app:load_more_deleted' %}?page={{ next_page }}"
-                            hx-target="#deleted-todo-items"
-                            hx-swap="beforeend"
-                            hx-on:click="this.remove()">
-                        Load More Deleted Todos
-                    </button>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>

@@ -1,0 +1,121 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load socialaccount %}
+
+{% block title %}{% trans "Sign Up" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card mt-5">
+            <div class="card-header">
+                <h4 class="mb-0">{% trans "Sign Up" %}</h4>
+            </div>
+            <div class="card-body">
+                <!-- Social Signup First -->
+                <div class="mb-4">
+                    <p class="text-center mb-3">{% trans "Sign up with:" %}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% provider_login_url 'google' process='signup' %}" class="btn btn-danger">
+                            <i class="bi bi-google me-2"></i> {% trans "Sign up with Google" %}
+                        </a>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <p class="text-center text-muted mb-3">{% trans "Or sign up with email/password:" %}</p>
+                
+                <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">{% trans "Username" %}</label>
+                        <input type="text" 
+                               name="username" 
+                               id="id_username" 
+                               class="form-control" 
+                               placeholder="{% trans 'Username' %}"
+                               required
+                               autofocus>
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">{% trans "Email Address" %}</label>
+                        <input type="email" 
+                               name="email" 
+                               id="id_email" 
+                               class="form-control" 
+                               placeholder="{% trans 'Email address' %}"
+                               required>
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_email2" class="form-label">{% trans "Email Address (again)" %}</label>
+                        <input type="email" 
+                               name="email2" 
+                               id="id_email2" 
+                               class="form-control" 
+                               placeholder="{% trans 'Confirm email address' %}"
+                               required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">{% trans "Password" %}</label>
+                        <input type="password" 
+                               name="password1" 
+                               id="id_password1" 
+                               class="form-control" 
+                               placeholder="{% trans 'Password' %}"
+                               required>
+                        {% if form.password1.errors %}
+                            <div class="text-danger small">{{ form.password1.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">{% trans "Password (again)" %}</label>
+                        <input type="password" 
+                               name="password2" 
+                               id="id_password2" 
+                               class="form-control" 
+                               placeholder="{% trans 'Confirm password' %}"
+                               required>
+                    </div>
+                    
+                    {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-success" type="submit">
+                            <i class="bi bi-person-plus"></i> {% trans "Sign Up" %}
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-3">{% trans "Already have an account?" %}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'account_login' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> {% trans "Sign In" %}
+                        </a>
+                        
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i> {% trans "Back to Home" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -33,19 +33,3 @@ urlpatterns = [
     path('', views.TodoListView.as_view(), name='home'),
 ]
 
-
-# from django.contrib import admin
-# from django.urls import path, include
-# from todo_app import views
-
-# app_name = "todo_app" 
-
-# urlpatterns = [
-#     # path('admin/', admin.site.urls),
-#     path('', views.index, name='index'),
-#     path('create/', views.create_todo , name= 'create'),
-#     path('<int:pk>/toggle/', views.toggle_todo, name='toggle'),
-#     path('<int:pk>/edit/', views.edit_todo, name='edit'),
-#     path('<int:pk>/delete/', views.delete_todo, name='delete'),
-#     path('<int:pk>/history/', views.todo_history, name='history'),
-# ]
