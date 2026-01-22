@@ -53,6 +53,17 @@ class Todo(TimeStampedModel, SoftDeleteModel):
     title = models.CharField(max_length=200, verbose_name=_("Title"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     completed = models.BooleanField(default=False, verbose_name=_("Completed"))
+
+    # YOU MUST HAVE THIS BLOCK IN MODELS.PY:
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('in_progress', 'In Progress'),
+            ('completed', 'Completed')
+        ],
+        default='pending'
+    )
     
     # Custom manager
     objects = TodoManager()

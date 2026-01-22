@@ -6,8 +6,8 @@ from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LogoutView as AuthLogoutView
+# from django.contrib.auth.mixins import LoginRequiredMixin
+# from django.contrib.auth.views import LogoutView as AuthLogoutView
 from .models import Todo, TodoEvent
 
 class TodoListView(TemplateView):
@@ -26,6 +26,15 @@ class TodoListView(TemplateView):
         per_page = 5
         
         # Only get todos for the current logged-in user
+        print("Request Object:")
+        print(self.request)
+        print(self.request.META)
+        print(self.request.headers)
+        print(self.request.GET)
+        print("----------------------------------------------------------------------------------------------------")
+        print("Current User:")
+        print(self.request.user)
+
         todos = Todo.objects.active().filter(user=self.request.user).order_by('-created_at')
         paginator = Paginator(todos, per_page)
         
@@ -69,19 +78,23 @@ class CreateTodoView(View):
             return JsonResponse({'error': 'A todo with this title already exists'}, status=400)
         
         # Create todo with the current user
+        print("Creating todo for user:", request.user)
+        print("User ID:", request.user.id)
+        print("title:", title )
         todo = Todo.objects.create(
             title=title, 
             description=description,
-            user=request.user  # Assign the current user
-        )
-        
-        # Create event with the current user
-        TodoEvent.objects.create(
             user=request.user,  # Assign the current user
-            todo=todo,
-            event_type=TodoEvent.TODO_CREATED,
-            details={'title': title}
+            status='pending'  # Default status
         )
+        # Create event with the current user
+        # TodoEvent.objects.create(
+        #     user=request.user,  # Assign the current user
+        #     todo=todo,
+        #     event_type=TodoEvent.TODO_CREATED,
+        #     details={'title': title}
+        # )
+
         
         if request.htmx:
             # Return the new todo item
@@ -105,18 +118,18 @@ class ToggleTodoView(View):
         todo.completed = not todo.completed
         todo.save()
         
-        event_type = (
-            TodoEvent.TODO_CHECKED
-            if todo.completed
-            else TodoEvent.TODO_UNCHECKED
-        )
+        # event_type = (
+        #     TodoEvent.TODO_CHECKED
+        #     if todo.completed
+        #     else TodoEvent.TODO_UNCHECKED
+        # )
         
-        TodoEvent.objects.create(
-            user=request.user,  # Assign the current user
-            todo=todo,
-            event_type=event_type,
-            details={'completed': todo.completed, 'title': todo.title}
-        )
+        # TodoEvent.objects.create(
+        #     user=request.user,  # Assign the current user
+        #     todo=todo,
+        #     event_type=event_type,
+        #     details={'completed': todo.completed, 'title': todo.title}
+        # )
         
         return render(request, 'partials/todo_item.html', {'todo': todo})
 
@@ -161,25 +174,34 @@ class EditTodoView(View):
         #       todo.description = description
         #       todo.save()
         # 2] - below code
-        Todo.objects.filter(pk=todo.pk).update(
-            title=title,
-            description=description,
-            updated_at=timezone.now()
-        )
-        
+        # Todo.objects.filter(pk=todo.pk).update(
+        #     title=title,
+        #     description=description,
+        #     updated_at=timezone.now()
+        # )
         # Refresh the todo object from database
         # reloads fresh values from DB into todo instance 
-        todo.refresh_from_db()
+        # todo.refresh_from_db()
+
+
+        # 3] - using signals as in signals.py file
+        todo._current_user = request.user  # Attach user for signal
+        todo.title = title
+        todo.description = description
+        todo.save()
+        # This will trigger the signal to log the update event
         
-        TodoEvent.objects.create(
-            user=request.user,  # Assign the current user
-            todo=todo,
-            event_type=TodoEvent.TODO_UPDATED,
-            details={
-                'old': old_data,
-                'new': {'title': title, 'description': description}
-            }
-        )
+        
+        
+        # TodoEvent.objects.create(
+        #     user=request.user,  # Assign the current user
+        #     todo=todo,
+        #     event_type=TodoEvent.TODO_UPDATED,
+        #     details={
+        #         'old': old_data,
+        #         'new': {'title': title, 'description': description}
+        #     }
+        # )
         
         return render(request, 'partials/todo_item.html', {'todo': todo})
 
@@ -198,13 +220,14 @@ class SoftDeleteTodoView(View):
         todo = get_object_or_404(Todo.objects.active().filter(user=request.user), pk=pk)
         
         todo.soft_delete()
+        # this have save() which will trigger signal
         
-        TodoEvent.objects.create(
-            user=request.user,  # Assign the current user
-            todo=todo,
-            event_type=TodoEvent.TODO_DELETED,
-            details={'title': todo.title}
-        )
+        # TodoEvent.objects.create(
+        #     user=request.user,  # Assign the current user
+        #     todo=todo,
+        #     event_type=TodoEvent.TODO_DELETED,
+        #     details={'title': todo.title}
+        # )
         
         if request.htmx:
             # Return empty div to remove the todo from DOM
@@ -258,21 +281,17 @@ class RestoreTodoView(View):
         # Only allow restoring todos that belong to the current user
         todo = get_object_or_404(Todo.objects.deleted().filter(user=request.user), pk=pk)
         
-        # Task 5: Use ORM update for restore
-        Todo.objects.filter(pk=todo.pk).update(
-            is_deleted=False,
-            deleted_at=None,
-            updated_at=timezone.now()
-        )
+        todo.restore()
+        # this have save() which will trigger signal
         
-        todo.refresh_from_db()
+        # todo.refresh_from_db()
         
-        TodoEvent.objects.create(
-            user=request.user,  # Assign the current user
-            todo=todo,
-            event_type=TodoEvent.TODO_RESTORED,
-            details={'title': todo.title}
-        )
+        # TodoEvent.objects.create(
+        #     user=request.user,  # Assign the current user
+        #     todo=todo,
+        #     event_type=TodoEvent.TODO_RESTORED,
+        #     details={'title': todo.title}
+        # )
         
         if request.htmx:
             # Return empty to remove from deleted list
