@@ -31,5 +31,7 @@ urlpatterns = [
     
     # Root redirect
     path('', views.TodoListView.as_view(), name='home'),
+    path("mail-todos/", views.MailTodosView.as_view(), name="mail_todos"),
+
 ]
 

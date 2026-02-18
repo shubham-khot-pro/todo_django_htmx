@@ -46,6 +46,11 @@
                 <h5 class="card-title d-flex justify-content-between align-items-center">
                     Active Todos
                 </h5>
+
+                <button hx-post="{% url 'todo_app:mail_todos' %}" hx-trigger="click" hx-swap="none" class="btn btn-primary">
+                    Mail My Todos 📧
+                </button>
+
                 
                 <div id="todo-items">
                     {% for todo in todos %}

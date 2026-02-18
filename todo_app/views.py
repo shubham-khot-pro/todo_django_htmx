@@ -6,6 +6,8 @@ from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+
+from todo_app.tasks import send_todos_email
 # from django.contrib.auth.mixins import LoginRequiredMixin
 # from django.contrib.auth.views import LogoutView as AuthLogoutView
 from .models import Todo, TodoEvent
@@ -453,3 +455,18 @@ class LoadMoreHistoryView(View):
 # class LogoutView(AuthLogoutView):
 #     """Custom logout view"""
 #     next_page = '/'
+
+@method_decorator(login_required(login_url='/accounts/login/'), name='dispatch')
+class MailTodosView(View):
+
+    def post(self, request):
+
+        send_todos_email.delay(request.user.id)
+
+        # without celery, for testing
+        # send_todos_email(request.user.id)
+
+        return JsonResponse({
+            "status": "Email is being sent 📧"
+        })
+

@@ -142,7 +142,17 @@ LOGOUT_REDIRECT_URL = '/'  # After logout
 ACCOUNT_LOGOUT_ON_GET = True  # Logout immediately without confirmation
 
 # Email backend (for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "khotshubham393@gmail.com"    
+# EMAIL_HOST_PASSWORD = "glvtrmbijmvdayrz"
+EMAIL_HOST_PASSWORD = "zkophitjamwadcok"
+
 
 # Social account providers (Google)
 SOCIALACCOUNT_PROVIDERS = {
@@ -168,3 +178,12 @@ SOCIALACCOUNT_PROVIDERS = {
 # LOGIN_URL = '/oauth/login/google-oauth2/'
 # SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 # SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+
+
+
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
